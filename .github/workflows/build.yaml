@@ -23,4 +23,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ghcr.io/pprecel/claude-warmup:latest
+          tags: |
+            ghcr.io/pprecel/claude-warmup:latest
+            ghcr.io/pprecel/claude-warmup:${{ github.sha }}

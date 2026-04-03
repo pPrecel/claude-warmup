@@ -20,11 +20,19 @@ jobs:
 
       - name: Build image and import into cluster
         run: |
-          docker build -t ghcr.io/pprecel/claude-warmup:latest .
-          k3d image import ghcr.io/pprecel/claude-warmup:latest -c test
+          docker build -t ghcr.io/pprecel/claude-warmup:${{ github.sha }} .
+          k3d image import ghcr.io/pprecel/claude-warmup:${{ github.sha }} -c test
+
+      - name: Create secret
+        run: |
+          kubectl create secret generic redis-credentials \
+            --from-literal=redis-password=changeme
 
       - name: Deploy application
-        run: kubectl apply -f k8s/
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deployment/claude-warmup \
+            claude-warmup=ghcr.io/pprecel/claude-warmup:${{ github.sha }}
 
       - name: Wait for rollout
         run: |
@@ -41,3 +49,8 @@ jobs:
           RESPONSE=$(curl -sf http://localhost:8080)
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "hello claude warmup (requests: 2)"
+
+      - name: Verify Redis requires authentication
+        run: |
+          kubectl exec deployment/redis -- redis-cli ping 2>&1 | grep -q "NOAUTH"
+          kubectl exec deployment/redis -- redis-cli -a changeme ping 2>&1 | grep -q "PONG"
