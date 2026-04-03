@@ -33,8 +33,11 @@ jobs:
           tags: |
             ghcr.io/pprecel/claude-warmup:latest
             ghcr.io/pprecel/claude-warmup:${{ github.sha }}
-          load: false
 
+  scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
