@@ -51,4 +51,4 @@ Releases (`v*` tags) additionally run a `release` job that bundles Kubernetes ma
 
 ## License
 
-[ISC](LICENSE)
+[MIT](LICENSE)
