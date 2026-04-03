@@ -36,8 +36,8 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/redis --timeout=60s
-          kubectl rollout status deployment/claude-warmup --timeout=60s
+          kubectl rollout status deployment/redis --timeout=120s
+          kubectl rollout status deployment/claude-warmup --timeout=120s
 
       - name: Run integration test
         run: |
