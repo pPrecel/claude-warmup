@@ -49,3 +49,59 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           trivyignores: .trivyignore
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install k3d
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: test
+          args: --wait
+
+      - name: Pull image and import into cluster
+        run: |
+          docker pull ghcr.io/pprecel/claude-warmup:${{ github.sha }}
+          k3d image import ghcr.io/pprecel/claude-warmup:${{ github.sha }} -c test
+
+      - name: Create secret
+        run: |
+          kubectl create secret generic redis-credentials \
+            --from-literal=redis-password=${{ secrets.TEST_REDIS_PASSWORD }}
+
+      - name: Deploy application
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deployment/claude-warmup \
+            claude-warmup=ghcr.io/pprecel/claude-warmup:${{ github.sha }}
+          kubectl scale deployment/claude-warmup --replicas=1
+          kubectl patch deployment/claude-warmup \
+            -p '{"spec":{"template":{"spec":{"containers":[{"name":"claude-warmup","imagePullPolicy":"Never"}]}}}}'
+          kubectl delete networkpolicy app-egress --ignore-not-found
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/redis --timeout=120s
+          kubectl rollout status deployment/claude-warmup --timeout=120s
+
+      - name: Run integration test
+        run: |
+          kubectl port-forward svc/claude-warmup 8080:80 &
+          PF_PID=$!
+          sleep 3
+          RESPONSE=$(curl -sf http://localhost:8080)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "hello claude warmup (requests: 1)"
+          RESPONSE=$(curl -sf http://localhost:8080)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "hello claude warmup (requests: 2)"
+          kill $PF_PID || true
+
+      - name: Verify Redis requires authentication
+        run: |
+          kubectl exec deployment/redis -- redis-cli ping 2>&1 | grep -q "NOAUTH"
+          kubectl exec deployment/redis -- redis-cli -a ${{ secrets.TEST_REDIS_PASSWORD }} ping 2>&1 | grep -q "PONG"
