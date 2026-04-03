@@ -12,6 +12,7 @@ spec:
       labels:
         app: claude-warmup
     spec:
+      serviceAccountName: claude-warmup
       containers:
         - name: claude-warmup
           image: ghcr.io/pprecel/claude-warmup:latest

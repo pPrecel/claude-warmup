@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: claude-warmup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: claude-warmup
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: claude-warmup
+subjects:
+  - kind: ServiceAccount
+    name: claude-warmup
+roleRef:
+  kind: Role
+  name: claude-warmup
+  apiGroup: rbac.authorization.k8s.io
