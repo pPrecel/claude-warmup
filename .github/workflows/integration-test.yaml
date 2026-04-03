@@ -1,0 +1,43 @@
+name: Integration Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install k3d
+        run: curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+      - name: Create k3d cluster
+        run: k3d cluster create test --wait
+
+      - name: Build image and import into cluster
+        run: |
+          docker build -t ghcr.io/pprecel/claude-warmup:latest .
+          k3d image import ghcr.io/pprecel/claude-warmup:latest -c test
+
+      - name: Deploy application
+        run: kubectl apply -f k8s/
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/redis --timeout=60s
+          kubectl rollout status deployment/claude-warmup --timeout=60s
+
+      - name: Run integration test
+        run: |
+          kubectl port-forward svc/claude-warmup 8080:80 &
+          sleep 3
+          RESPONSE=$(curl -sf http://localhost:8080)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "hello claude warmup (requests: 1)"
+          RESPONSE=$(curl -sf http://localhost:8080)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q "hello claude warmup (requests: 2)"
