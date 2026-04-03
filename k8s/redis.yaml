@@ -15,7 +15,7 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          args: ["--requirepass", "$(REDIS_PASSWORD)"]
+          command: ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD"]
           ports:
             - containerPort: 6379
           volumeMounts:
@@ -36,12 +36,12 @@ spec:
               memory: 128Mi
           livenessProbe:
             exec:
-              command: ["redis-cli", "-a", "$(REDIS_PASSWORD)", "ping"]
+              command: ["sh", "-c", "redis-cli -a $REDIS_PASSWORD ping"]
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["redis-cli", "-a", "$(REDIS_PASSWORD)", "ping"]
+              command: ["sh", "-c", "redis-cli -a $REDIS_PASSWORD ping"]
             initialDelaySeconds: 3
             periodSeconds: 5
       volumes:
