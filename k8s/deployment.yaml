@@ -18,5 +18,8 @@ spec:
           ports:
             - containerPort: 3000
           env:
-            - name: REDIS_URL
-              value: redis://redis:6379
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-credentials
+                  key: redis-password

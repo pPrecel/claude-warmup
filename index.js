@@ -1,7 +1,10 @@
 const http = require('http');
 const { createClient } = require('redis');
 
-const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
+const redisPassword = process.env.REDIS_PASSWORD;
+const redisUrl = redisPassword
+  ? `redis://:${redisPassword}@redis:6379`
+  : (process.env.REDIS_URL || 'redis://redis:6379');
 const redis = createClient({ url: redisUrl });
 
 redis.connect().then(() => {
