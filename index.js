@@ -18,9 +18,15 @@ const server = http.createServer(async (req, res) => {
     res.end('ok');
     return;
   }
-  const count = await redis.incr('request_count');
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end(`hello claude warmup (requests: ${count})`);
+  try {
+    const count = await redis.incr('request_count');
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(`hello claude warmup (requests: ${count})`);
+  } catch (err) {
+    console.log(JSON.stringify({ level: 'error', msg: 'Redis error', error: err.message }));
+    res.writeHead(503, { 'Content-Type': 'text/plain' });
+    res.end('service unavailable');
+  }
 });
 
 server.listen(3000, () => {
