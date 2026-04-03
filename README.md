@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/pPrecel/claude-warmup/actions/workflows/build.yaml/badge.svg)](https://github.com/pPrecel/claude-warmup/actions/workflows/build.yaml)
 [![Release](https://github.com/pPrecel/claude-warmup/actions/workflows/release.yaml/badge.svg)](https://github.com/pPrecel/claude-warmup/actions/workflows/release.yaml)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A production-grade Node.js HTTP server that returns a persistent request counter backed by Redis, deployed on Kubernetes. Built as a reference project demonstrating secure, production-oriented deployment patterns: non-root containers, NetworkPolicy, RBAC, PersistentVolumeClaim, health probes, and automated CI/CD with vulnerability scanning.
 
