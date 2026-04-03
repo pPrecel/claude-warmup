@@ -20,6 +20,6 @@ redis.connect().then(() => {
   });
 
   server.listen(3000, () => {
-    console.log('Server running at http://localhost:3000');
+    console.log(JSON.stringify({ level: 'info', msg: 'Server running at http://localhost:3000' }));
   });
 });
