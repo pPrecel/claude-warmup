@@ -43,3 +43,10 @@ spec:
               port: 3000
             initialDelaySeconds: 3
             periodSeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
