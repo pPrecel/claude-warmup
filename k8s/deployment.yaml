@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-warmup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: claude-warmup
+  template:
+    metadata:
+      labels:
+        app: claude-warmup
+    spec:
+      containers:
+        - name: claude-warmup
+          image: pprecel/claude-warmup:latest
+          ports:
+            - containerPort: 3000

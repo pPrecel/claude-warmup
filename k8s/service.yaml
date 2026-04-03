@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: claude-warmup
+spec:
+  selector:
+    app: claude-warmup
+  ports:
+    - port: 80
+      targetPort: 3000
