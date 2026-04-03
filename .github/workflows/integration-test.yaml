@@ -26,7 +26,7 @@ jobs:
       - name: Create secret
         run: |
           kubectl create secret generic redis-credentials \
-            --from-literal=redis-password=changeme
+            --from-literal=redis-password=${{ secrets.TEST_REDIS_PASSWORD }}
 
       - name: Deploy application
         run: |
@@ -42,6 +42,7 @@ jobs:
       - name: Run integration test
         run: |
           kubectl port-forward svc/claude-warmup 8080:80 &
+          PF_PID=$!
           sleep 3
           RESPONSE=$(curl -sf http://localhost:8080)
           echo "Response: $RESPONSE"
@@ -49,8 +50,9 @@ jobs:
           RESPONSE=$(curl -sf http://localhost:8080)
           echo "Response: $RESPONSE"
           echo "$RESPONSE" | grep -q "hello claude warmup (requests: 2)"
+          kill $PF_PID || true
 
       - name: Verify Redis requires authentication
         run: |
           kubectl exec deployment/redis -- redis-cli ping 2>&1 | grep -q "NOAUTH"
-          kubectl exec deployment/redis -- redis-cli -a changeme ping 2>&1 | grep -q "PONG"
+          kubectl exec deployment/redis -- redis-cli -a ${{ secrets.TEST_REDIS_PASSWORD }} ping 2>&1 | grep -q "PONG"
