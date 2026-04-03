@@ -18,6 +18,13 @@ const server = http.createServer(async (req, res) => {
     res.end('ok');
     return;
   }
+
+  if (req.url !== '/') {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('not found');
+    return;
+  }
+
   try {
     const count = await redis.incr('request_count');
     res.writeHead(200, { 'Content-Type': 'text/plain' });
