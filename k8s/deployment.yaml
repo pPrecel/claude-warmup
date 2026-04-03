@@ -17,3 +17,6 @@ spec:
           image: ghcr.io/pprecel/claude-warmup:latest
           ports:
             - containerPort: 3000
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379
