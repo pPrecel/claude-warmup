@@ -43,6 +43,7 @@ jobs:
           kubectl scale deployment/claude-warmup --replicas=1
           kubectl patch deployment/claude-warmup \
             -p '{"spec":{"template":{"spec":{"containers":[{"name":"claude-warmup","imagePullPolicy":"Never"}]}}}}'
+          kubectl delete networkpolicy app-egress --ignore-not-found
 
       - name: Wait for rollout
         run: |
