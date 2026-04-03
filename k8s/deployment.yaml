@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: claude-warmup
-          image: pprecel/claude-warmup:latest
+          image: ghcr.io/pprecel/claude-warmup:latest
           ports:
             - containerPort: 3000
