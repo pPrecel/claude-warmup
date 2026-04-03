@@ -33,8 +33,9 @@ jobs:
           kubectl apply -f k8s/
           kubectl set image deployment/claude-warmup \
             claude-warmup=ghcr.io/pprecel/claude-warmup:${{ github.sha }}
-
-      - name: Wait for rollout
+          kubectl scale deployment/claude-warmup --replicas=1
+          kubectl patch deployment/claude-warmup \
+            -p '{"spec":{"template":{"spec":{"containers":[{"name":"claude-warmup","imagePullPolicy":"Never"}]}}}}'
         run: |
           kubectl rollout status deployment/redis --timeout=120s
           kubectl rollout status deployment/claude-warmup --timeout=120s

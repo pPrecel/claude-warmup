@@ -1,0 +1,13 @@
+# CVEs in npm's bundled tooling (/usr/local/lib/node_modules/npm)
+# These packages are only used by npm itself, not by the application at runtime.
+CVE-2024-21538
+CVE-2025-64756
+CVE-2026-23745
+CVE-2026-23950
+CVE-2026-24842
+CVE-2026-26960
+CVE-2026-26996
+CVE-2026-27903
+CVE-2026-27904
+CVE-2026-29786
+CVE-2026-31802
