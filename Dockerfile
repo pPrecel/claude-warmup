@@ -2,7 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json index.js ./
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY index.js ./
 
 EXPOSE 3000
 
