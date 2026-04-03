@@ -29,8 +29,8 @@ k3d cluster create claude-warmup --wait
 kubectl create secret generic redis-credentials \
   --from-literal=redis-password=$(openssl rand -base64 24)
 
-# Deploy
-kubectl apply -f k8s/
+# Deploy from latest release
+kubectl apply -f https://github.com/pPrecel/claude-warmup/releases/latest/download/manifests.yaml
 
 # Test
 kubectl port-forward svc/claude-warmup 8080:80

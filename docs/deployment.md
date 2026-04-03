@@ -2,10 +2,16 @@
 
 ## Kubernetes manifests
 
-All manifests live in `k8s/`. Apply with:
+All manifests are bundled and attached to each [GitHub Release](https://github.com/pPrecel/claude-warmup/releases). Apply the latest release with:
 
 ```bash
-kubectl apply -f k8s/
+kubectl apply -f https://github.com/pPrecel/claude-warmup/releases/latest/download/manifests.yaml
+```
+
+To pin to a specific version:
+
+```bash
+kubectl apply -f https://github.com/pPrecel/claude-warmup/releases/download/v1.0.0/manifests.yaml
 ```
 
 | File | Purpose |

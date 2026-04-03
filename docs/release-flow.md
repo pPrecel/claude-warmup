@@ -64,20 +64,20 @@ Each entry links to its commit SHA. The notes also include the image reference a
 
 ## Deploying a release
 
-Download `manifests.yaml` from the GitHub Release page, then:
-
 ```bash
 # 1. Create the Redis secret (first time only)
 kubectl create secret generic redis-credentials \
   --from-literal=redis-password=$(openssl rand -base64 24)
 
-# 2. Apply all manifests
-kubectl apply -f manifests.yaml
+# 2. Apply latest release manifests
+kubectl apply -f https://github.com/pPrecel/claude-warmup/releases/latest/download/manifests.yaml
 
 # 3. Verify
 kubectl rollout status deployment/redis
 kubectl rollout status deployment/claude-warmup
 ```
+
+To pin to a specific version, replace `latest/download` with `download/vX.Y.Z`.
 
 ## Versioning convention
 
