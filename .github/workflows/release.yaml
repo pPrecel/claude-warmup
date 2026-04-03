@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    outputs:
+      image: ghcr.io/pprecel/claude-warmup:${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: |
+            ghcr.io/pprecel/claude-warmup:${{ github.ref_name }}
+            ghcr.io/pprecel/claude-warmup:latest
+
+  scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/pprecel/claude-warmup:${{ github.ref_name }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build, scan]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package k8s manifests
+        run: |
+          # Update deployment image to the release tag
+          sed "s|ghcr.io/pprecel/claude-warmup:latest|ghcr.io/pprecel/claude-warmup:${{ github.ref_name }}|g" \
+            k8s/deployment.yaml > /tmp/deployment.yaml
+          cp /tmp/deployment.yaml k8s/deployment.yaml
+
+          # Bundle all non-secret manifests into a single file
+          kubectl kustomize /dev/null 2>/dev/null || true
+          cat k8s/rbac.yaml \
+              k8s/network-policy.yaml \
+              k8s/redis.yaml \
+              k8s/service.yaml \
+              k8s/deployment.yaml \
+            | sed "s|---||g" \
+            | awk 'NF' \
+            | sed '1!{/^---/!{/^apiVersion/i ---
+          }}' \
+            > /tmp/manifests.yaml
+
+          echo "---" >> /tmp/manifests.yaml
+          echo "# NOTE: Create the redis-credentials secret separately before applying." >> /tmp/manifests.yaml
+          echo "# See k8s/secret.yaml.example" >> /tmp/manifests.yaml
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${{ github.ref_name }}$" | head -1)
+
+          if [ -z "$PREV_TAG" ]; then
+            COMMIT_RANGE="HEAD"
+            RANGE_LABEL="all commits"
+          else
+            COMMIT_RANGE="${PREV_TAG}..${{ github.ref_name }}"
+            RANGE_LABEL="since ${PREV_TAG}"
+          fi
+
+          # Categorise commits
+          FEATURES=$(git log $COMMIT_RANGE --oneline --no-merges | grep -iE "^[a-f0-9]+ (add|feat|new)" || true)
+          FIXES=$(git log $COMMIT_RANGE --oneline --no-merges | grep -iE "^[a-f0-9]+ (fix|bug|patch)" || true)
+          SECURITY=$(git log $COMMIT_RANGE --oneline --no-merges | grep -iE "^[a-f0-9]+ (sec|cve|vuln|auth|rbac|policy)" || true)
+          DOCS=$(git log $COMMIT_RANGE --oneline --no-merges | grep -iE "^[a-f0-9]+ (doc|readme|claude)" || true)
+          CI=$(git log $COMMIT_RANGE --oneline --no-merges | grep -iE "^[a-f0-9]+ (ci|build|workflow|pipeline|trivy|scan|test|integr)" || true)
+          OTHER=$(git log $COMMIT_RANGE --oneline --no-merges | grep -viE "^[a-f0-9]+ (add|feat|new|fix|bug|patch|sec|cve|vuln|auth|rbac|policy|doc|readme|claude|ci|build|workflow|pipeline|trivy|scan|test|integr)" || true)
+
+          format_section() {
+            local title="$1"
+            local commits="$2"
+            if [ -n "$commits" ]; then
+              echo "## $title"
+              echo "$commits" | while read -r line; do
+                sha=$(echo "$line" | awk '{print $1}')
+                msg=$(echo "$line" | cut -d' ' -f2-)
+                echo "- ${msg} (\`${sha}\`)"
+              done
+              echo ""
+            fi
+          }
+
+          NOTES=$(cat <<NOTES
+          ## What's included in ${{ github.ref_name }}
+
+          **Image:** \`ghcr.io/pprecel/claude-warmup:${{ github.ref_name }}\`
+          **Manifests:** See \`manifests.yaml\` attached to this release
+
+          Changes ${RANGE_LABEL}:
+
+          $(format_section "Features" "$FEATURES")
+          $(format_section "Bug Fixes" "$FIXES")
+          $(format_section "Security" "$SECURITY")
+          $(format_section "Documentation" "$DOCS")
+          $(format_section "CI/CD" "$CI")
+          $(format_section "Other" "$OTHER")
+
+          ## Deploying this release
+
+          \`\`\`bash
+          # 1. Create the Redis secret (first time only)
+          kubectl create secret generic redis-credentials \\
+            --from-literal=redis-password=\$(openssl rand -base64 24)
+
+          # 2. Apply all manifests
+          kubectl apply -f manifests.yaml
+
+          # 3. Verify
+          kubectl rollout status deployment/redis
+          kubectl rollout status deployment/claude-warmup
+          \`\`\`
+          NOTES
+          )
+
+          # Write to file for gh release create
+          echo "$NOTES" > /tmp/release-notes.md
+          cat /tmp/release-notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file /tmp/release-notes.md \
+            /tmp/manifests.yaml#manifests.yaml
