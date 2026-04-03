@@ -30,3 +30,12 @@ jobs:
           tags: |
             ghcr.io/pprecel/claude-warmup:latest
             ghcr.io/pprecel/claude-warmup:${{ github.sha }}
+          load: false
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/pprecel/claude-warmup:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
