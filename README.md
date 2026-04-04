@@ -4,6 +4,8 @@
 [![Release](https://github.com/pPrecel/claude-warmup/actions/workflows/release.yaml/badge.svg)](https://github.com/pPrecel/claude-warmup/actions/workflows/release.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+> **This repository is a showcase of using Claude AI (claude-sonnet) as an agent to generate a fully production-oriented project from scratch** — including application logic, containerization, Kubernetes deployment, security hardening, CI/CD pipeline, integration tests, release flow, and documentation. Every file in this repo was created through a conversation with Claude Code. The full session transcripts are published [here](https://gist.github.com/pPrecel/1aada3d737dc59342f060d7478c2100c).
+
 A production-grade Node.js HTTP server that returns a persistent request counter backed by Redis, deployed on Kubernetes. Built as a reference project demonstrating secure, production-oriented deployment patterns: non-root containers, NetworkPolicy, RBAC, PersistentVolumeClaim, health probes, and automated CI/CD with vulnerability scanning.
 
 ```
