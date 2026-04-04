@@ -143,8 +143,8 @@ jobs:
           kubectl create secret generic redis-credentials \\
             --from-literal=redis-password=\$(openssl rand -base64 24)
 
-          # 2. Apply all manifests
-          kubectl apply -f manifests.yaml
+          # 2. Apply release manifests
+          kubectl apply -f https://github.com/pprecel/claude-warmup/releases/download/${{ github.ref_name }}/manifests.yaml
 
           # 3. Verify
           kubectl rollout status deployment/redis
